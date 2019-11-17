@@ -188,6 +188,9 @@ public class CameraHolder {
                 int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     CaptureModule.FRONT_ID = i;
+                    mFrontCameraId = i;
+                } else if (mBackCameraId != -1) {
+                    mBackCameraId = i;
                 }
                 addCameraInfo(i, characteristics);
                 mCharacteristics.add(i, characteristics);

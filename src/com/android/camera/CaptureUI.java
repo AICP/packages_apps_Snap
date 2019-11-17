@@ -67,6 +67,7 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.imageprocessor.filter.DeepPortraitFilter;
 import com.android.camera.ui.AutoFitSurfaceView;
 import com.android.camera.ui.Camera2FaceView;
@@ -105,6 +106,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private static final int ANIMATION_DURATION = 300;
     private static final int CLICK_THRESHOLD = 200;
     private static final int AUTOMATIC_MODE = 0;
+    private static final String[] AWB_INFO_TITLE = {" R gain "," G gain "," B gain "," CCT "};
     private final FocusRing mFocusRing;
     private CameraActivity mActivity;
     private View mRootView;
@@ -195,7 +197,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private View mSceneModeSwitcher;
     private View mFrontBackSwitcher;
     private ImageView mMakeupButton;
-    private ImageView mDeepportraitSwitcher;
     private SeekBar mMakeupSeekBar;
     private SeekBar mDeepportraitSeekBar;
     private View mMakeupSeekBarLayout;
@@ -229,6 +230,12 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private int mDownSampleFactor = 4;
     private DecodeImageForReview mDecodeTaskForReview = null;
 
+    private View mStatsAwbInfo;
+    private TextView mStatsAwbRText;
+    private TextView mStatsAwbGText;
+    private TextView mStatsAwbBText;
+    private TextView mStatsAwbCcText;
+
     int mPreviewWidth;
     int mPreviewHeight;
     private boolean mIsVideoUI = false;
@@ -237,13 +244,12 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private void previewUIReady() {
         if((mSurfaceHolder != null && mSurfaceHolder.getSurface().isValid())) {
             mModule.onPreviewUIReady();
-            if ((mIsVideoUI || mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL)
+            if (mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL
                     && mThumbnail != null){
                 mThumbnail.setVisibility(View.INVISIBLE);
                 mThumbnail = null;
                 mActivity.updateThumbnail(mThumbnail);
-            } else if (!mIsVideoUI &&
-                    mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL){
+            } else if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL){
                 if (mThumbnail == null)
                     mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
                 mActivity.updateThumbnail(mThumbnail);
@@ -311,7 +317,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mFrontBackSwitcher = mRootView.findViewById(R.id.front_back_switcher);
         mMakeupButton = (ImageView) mRootView.findViewById(R.id.ts_makeup_switcher);
         mMakeupSeekBarLayout = mRootView.findViewById(R.id.makeup_seekbar_layout);
-        mDeepportraitSwitcher = (ImageView) mRootView.findViewById(R.id.deepportrait_switcher);
         mSeekbarBody = mRootView.findViewById(R.id.seekbar_body);
         mSeekbarToggleButton = (ImageView) mRootView.findViewById(R.id.seekbar_toggle);
         mSeekbarToggleButton.setOnClickListener(new View.OnClickListener() {
@@ -376,25 +381,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         });
         setMakeupButtonIcon();
 
-        mDeepportraitSwitcher.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (module != null && !module.isAllSessionClosed()) {
-                    String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
-                    if(value == null ||
-                            Integer.valueOf(value) != SettingsManager.SCENE_MODE_DEEPPORTRAIT_INT) {
-                        mSettingsManager.setValue(SettingsManager.KEY_SCENE_MODE,""+
-                                SettingsManager.SCENE_MODE_DEEPPORTRAIT_INT);
-                    } else {
-                        mSettingsManager.setValue(SettingsManager.KEY_SCENE_MODE,
-                                ""+SettingsManager.SCENE_MODE_AUTO_INT);
-                    }
-                }
-                setDeepportraitButtonIcon();
-            }
-        });
-        setDeepportraitButtonIcon();
-
         mFlashButton = (FlashToggleButton) mRootView.findViewById(R.id.flash_button);
         mProModeCloseButton = mRootView.findViewById(R.id.promode_close_button);
         mProModeCloseButton.setOnClickListener(new View.OnClickListener() {
@@ -414,6 +400,12 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mTimeLapseLabel = mRootView.findViewById(R.id.time_lapse_label);
         mPauseButton = (PauseButton) mRootView.findViewById(R.id.video_pause);
         mPauseButton.setOnPauseButtonListener(this);
+
+        mStatsAwbInfo = mRootView.findViewById(R.id.stats_awb_info);
+        mStatsAwbRText = mRootView.findViewById(R.id.stats_awb_r_text);
+        mStatsAwbGText = mRootView.findViewById(R.id.stats_awb_g_text);
+        mStatsAwbBText = mRootView.findViewById(R.id.stats_awb_b_text);
+        mStatsAwbCcText = mRootView.findViewById(R.id.stats_awb_cc_text);
 
         mMuteButton = (RotateImageView)mRootView.findViewById(R.id.mute_button);
         mMuteButton.setVisibility(View.VISIBLE);
@@ -581,6 +573,25 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         }
     }
 
+    public void updateAwbInfoText(String[] info) {
+        if (info == null || info.length <4)
+            return;
+        mStatsAwbRText.setText(AWB_INFO_TITLE[0]+info[0]);
+        mStatsAwbGText.setText(AWB_INFO_TITLE[1]+info[1]);
+        mStatsAwbBText.setText(AWB_INFO_TITLE[2]+info[2]);
+        mStatsAwbCcText.setText(AWB_INFO_TITLE[3]+info[3]);
+    }
+
+    public void updateAWBInfoVisibility(int visibility) {
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mStatsAwbInfo != null) {
+                    mStatsAwbInfo.setVisibility(visibility);
+                }
+            }
+        });
+    }
+
     private int getCurrentIntentMode() {
         return mModule.getCurrentIntentMode();
     }
@@ -632,7 +643,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
             public void run() {
                 if(value != null && !value.equals("0")) {
                     mMakeupButton.setImageResource(R.drawable.beautify_on);
-                    mMakeupSeekBarLayout.setVisibility(View.VISIBLE);
+                    mMakeupSeekBarLayout.setVisibility(View.GONE);
                 } else {
                     mMakeupButton.setImageResource(R.drawable.beautify);
                     mMakeupSeekBarLayout.setVisibility(View.GONE);
@@ -643,20 +654,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
 
     public float getDeepZoomValue() {
         return mDeepZoomValue;
-    }
-
-    private void setDeepportraitButtonIcon() {
-        boolean enable = DeepPortraitFilter.isSupportedStatic();
-        mDeepportraitSwitcher.setEnabled(enable);
-        mActivity.runOnUiThread(new Runnable() {
-            public void run() {
-                if(mModule.isDeepPortraitMode()) {
-                    mDeepportraitSwitcher.setImageResource(R.drawable.deep_portrait_on);
-                } else {
-                    mDeepportraitSwitcher.setImageResource(R.drawable.deep_portrait);
-                }
-            }
-        });
     }
 
     public void onCameraOpened(List<Integer> cameraIds) {
@@ -674,7 +671,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         initFilterModeButton();
         initFlashButton();
         setMakeupButtonIcon();
-        setDeepportraitButtonIcon();
         showSceneModeLabel();
         updateMenus();
         if(mModule.isTrackingFocusSettingOn()) {
@@ -696,10 +692,13 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
 
     public void initializeProMode(boolean promode) {
         mCameraControls.setProMode(promode);
-        if (promode)
+        if (promode) {
             mVideoButton.setVisibility(View.INVISIBLE);
-        else if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL)
+            mFlashButton.setVisibility(View.INVISIBLE);
+        }
+        else if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL) {
             mVideoButton.setVisibility(View.VISIBLE);
+        }
     }
 
     // called from onResume but only the first time
@@ -760,7 +759,8 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     }
 
     public void openSettingsMenu() {
-        if (mPreviewLayout != null && mPreviewLayout.getVisibility() == View.VISIBLE) {
+        if ((mPreviewLayout != null && mPreviewLayout.getVisibility() == View.VISIBLE) ||
+                mIsVideoUI) {
             return;
         }
         removeFilterMenu(false);
@@ -857,7 +857,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
                 mFlashButton.init(true);
             }
             mVideoButton.setImageResource(R.drawable.video_stop);
-            mRecordingTimeView.setText("");
+            mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             mMuteButton.setVisibility(View.VISIBLE);
             setMuteButtonResource(!mModule.isAudioMute());
@@ -1018,9 +1018,8 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mSceneModeSwitcher.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_MAKEUP);
         if(value != null && value.equals("0")) {
-            mMakeupButton.setVisibility(View.INVISIBLE);
+            mMakeupButton.setVisibility(View.GONE);
         }
-        mDeepportraitSwitcher.setVisibility(View.INVISIBLE);
         mIsVideoUI = true;
         mPauseButton.setVisibility(View.VISIBLE);
     }
@@ -1030,8 +1029,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         mFilterModeSwitcher.setVisibility(View.VISIBLE);
         mSceneModeSwitcher.setVisibility(View.VISIBLE);
-        mMakeupButton.setVisibility(View.VISIBLE);
-        mDeepportraitSwitcher.setVisibility(View.VISIBLE);
+        mMakeupButton.setVisibility(View.GONE);
         mIsVideoUI = false;
         mPauseButton.setVisibility(View.INVISIBLE);
         //exit recording mode needs to refresh scene mode label.
@@ -1247,13 +1245,17 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
 
     public void hideCameraControls(boolean hide) {
         final int status = (hide) ? View.INVISIBLE : View.VISIBLE;
-        if (mFlashButton != null) mFlashButton.setVisibility(status);
+        if (mFlashButton != null){
+            mFlashButton.setVisibility(status);
+            if (!hide) {
+                mFlashButton.init(false);
+            }
+        }
         if (mFrontBackSwitcher != null) mFrontBackSwitcher.setVisibility(status);
         if (mSceneModeSwitcher != null) mSceneModeSwitcher.setVisibility(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setVisibility(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setVisibility(status);
-        if (mMakeupButton != null) mMakeupButton.setVisibility(status);
-        if (mDeepportraitSwitcher != null) mDeepportraitSwitcher.setVisibility(status);
+        if (mMakeupButton != null) mMakeupButton.setVisibility(View.GONE);
     }
 
     public void initializeControlByIntent() {
@@ -1340,8 +1342,13 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
              enableMakeupMenu = false;
              enableFilterMenu = false;
         }
-
+        if(!BeautificationFilter.isSupportedStatic()) {
+            enableMakeupMenu = false;
+        }
         mMakeupButton.setEnabled(enableMakeupMenu);
+        if(!BeautificationFilter.isSupportedStatic()) {
+            mMakeupButton.setVisibility(View.GONE);
+        }
         mFilterModeSwitcher.setEnabled(enableFilterMenu);
         mSceneModeSwitcher.setEnabled(enableSceneMenu);
     }
@@ -1360,6 +1367,10 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         if (mShutterButton != null) {
             mShutterButton.setEnabled(enabled);
         }
+    }
+
+    public boolean isShutterEnabled() {
+        return mShutterButton.isEnabled();
     }
 
     /**
@@ -1482,8 +1493,21 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         showUIAfterCountDown();
     }
 
+    public void initCountDownView() {
+        if (mCountDownView == null) {
+            initializeCountDown();
+        } else {
+            mCountDownView.initSoundPool();
+        }
+    }
+
+    public void releaseSoundPool() {
+        if (mCountDownView != null) {
+            mCountDownView.releaseSoundPool();
+        }
+    }
+
     public void startCountDown(int sec, boolean playSound) {
-        if (mCountDownView == null) initializeCountDown();
         mCountDownView.startCountDown(sec, playSound);
         hideUIWhileCountDown();
     }
@@ -1772,7 +1796,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
         mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
         mSurfaceView.setVisibility(View.VISIBLE);
-        mIsVideoUI = false;
     }
 
     public boolean setPreviewSize(int width, int height) {

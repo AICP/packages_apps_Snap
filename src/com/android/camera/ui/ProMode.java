@@ -110,9 +110,7 @@ public class ProMode extends View {
         if (key == null) return;
         int index = mSettingsManager.getValueIndex(key);
         CharSequence[] cc = mSettingsManager.getEntries(key);
-        if (cc != null) {
-            mUI.updateProModeText(mode, cc[index].toString());
-        }
+        mUI.updateProModeText(mode, cc[index].toString());
     }
 
     @Override
@@ -233,13 +231,9 @@ public class ProMode extends View {
         } else {
             if (key == null) return;
             CharSequence[] cc = mSettingsManager.getEntries(key);
-            int length = 0;
-            if (mSettingsManager.getEntryValues(key)!= null ) {
-                length = mSettingsManager.getEntryValues(key).length;
-            }
+            int length = mSettingsManager.getEntryValues(key).length;
             int index = mSettingsManager.getValueIndex(key);
             updateSlider(length);
-
             for (int i = 0; i < length; i++) {
                 View v;
                 if (mMode == WHITE_BALANCE_MODE) {

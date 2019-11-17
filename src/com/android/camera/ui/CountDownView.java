@@ -20,6 +20,7 @@ import java.util.Locale;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Handler;
@@ -55,15 +56,41 @@ public class CountDownView extends FrameLayout {
         mContext = context;
         mCountDownAnim = AnimationUtils.loadAnimation(context, R.anim.count_down_exit);
 
+        initSoundPool();
+    }
+
+    public void initSoundPool() {
         if (mSoundPool == null) {
             // Load the beeps
-            if (context.getResources().getBoolean(R.bool.force_count_down_sound)) {
-                mSoundPool = new SoundPool(1, AudioManager.STREAM_SYSTEM_ENFORCED, 0);
+            if (mContext.getResources().getBoolean(R.bool.force_count_down_sound)) {
+                mSoundPool = new SoundPool.Builder()
+                        .setMaxStreams(1)
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                        .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                                        .build())
+                        .build();
             } else {
-                mSoundPool = new SoundPool(1, AudioManager.STREAM_NOTIFICATION, 0);
+                mSoundPool = new SoundPool.Builder()
+                        .setMaxStreams(1)
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                        .build())
+                        .build();
             }
-            mBeepOnce = mSoundPool.load(context, R.raw.beep_once, 1);
-            mBeepTwice = mSoundPool.load(context, R.raw.beep_twice, 1);
+            mBeepOnce = mSoundPool.load(mContext, R.raw.beep_once, 1);
+            mBeepTwice = mSoundPool.load(mContext, R.raw.beep_twice, 1);
+        }
+    }
+
+    public void releaseSoundPool() {
+        if (mSoundPool != null) {
+            mSoundPool.unload(R.raw.beep_once);
+            mSoundPool.unload(R.raw.beep_twice);
+            mSoundPool.release();
+            mSoundPool = null;
         }
     }
 
@@ -89,9 +116,8 @@ public class CountDownView extends FrameLayout {
             mCountDownAnim.reset();
             mRemainingSecondsView.clearAnimation();
             mRemainingSecondsView.startAnimation(mCountDownAnim);
-
             // Play sound effect for the last 3 seconds of the countdown
-            if (mPlaySound) {
+            if (mPlaySound && mSoundPool != null) {
                 if (newVal == 1) {
                     mSoundPool.play(mBeepTwice, 1.0f, 1.0f, 0, 0, 1.0f);
                 } else if (newVal <= 3) {

@@ -6,7 +6,9 @@ LOCAL_MODULE_TAGS := optional
 
 LOCAL_STATIC_JAVA_LIBRARIES := android-support-v13
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v4
+LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-recyclerview
 LOCAL_STATIC_JAVA_LIBRARIES += xmp_toolkit
+LOCAL_STATIC_JAVA_LIBRARIES += androidx.heifwriter_heifwriter
 LOCAL_STATIC_JAVA_LIBRARIES += zxing-core
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
@@ -18,6 +20,7 @@ LOCAL_SRC_FILES += $(call all-renderscript-files-under, rs)
 
 LOCAL_RESOURCE_DIR += $(LOCAL_PATH)/res
 LOCAL_RESOURCE_DIR += $(LOCAL_PATH)/quickReader/res
+LOCAL_RESOURCE_DIR += frameworks/support/v7/recyclerview/res
 
 include $(LOCAL_PATH)/version.mk
 LOCAL_AAPT_FLAGS := \
@@ -31,6 +34,8 @@ LOCAL_STATIC_JAVA_AAR_LIBRARIES += \
     qreader-core \
     qreader-zxing
 
+LOCAL_JAVA_LIBRARIES := org.lineageos.platform.internal
+
 LOCAL_PACKAGE_NAME := Snap
 LOCAL_PRIVILEGED_MODULE := true
 LOCAL_PRIVATE_PLATFORM_APIS := true
@@ -41,7 +46,10 @@ LOCAL_AAPT_FLAGS += --rename-manifest-package org.lineageos.snap
 #LOCAL_SDK_VERSION := current
 LOCAL_RENDERSCRIPT_TARGET_API := 23
 
+#Do not override for targets using vanilla AOSP
+ifneq ($(TARGET_USES_AOSP),true)
 LOCAL_OVERRIDES_PACKAGES := Camera2
+endif
 
 LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 
