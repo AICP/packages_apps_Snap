@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d07482d_3dbf3aac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1682
+      },
+      "writtenOn": "2021-02-16T19:59:42Z",
+      "side": 1,
+      "message": "This change is depending on https://review.lineageos.org/c/LineageOS/android_packages_providers_MediaProvider/+/303908 or a r.11.1 branch creation for our packages/providers/MediaProvider",
+      "revId": "9cf12a40ac8ee508059c456c78667b9b5c219779",
+      "serverId": "9f904cbb-a964-4fab-a7dc-5cfc4d5c238b"
+    }
+  ]
+}
