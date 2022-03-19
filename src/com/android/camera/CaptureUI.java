@@ -20,6 +20,8 @@
 package com.android.camera;
 
 import android.animation.Animator;
+import android.animation.Animator.AnimatorListener;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -46,6 +48,7 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -209,6 +212,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private View mFilterModeSwitcher;
     private View mSceneModeSwitcher;
     private View mFrontBackSwitcher;
+    private View mModeSwitcher;
     private ImageView mMakeupButton;
     private SeekBar mMakeupSeekBar;
     private SeekBar mDeepportraitSeekBar;
@@ -260,6 +264,12 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private TextView mStatsAecSensitivityText;
     private TextView mStatsAecExposureTimeText;
 
+    private TextView mExposureText;
+    private TextView mManualText;
+    private TextView mWhiteBalanceText;
+    private TextView mIsoText;
+    private TextView mZoomSeekbarText;
+
     private LinearLayout mZoomLinearLayout;
 
     private TextView mZoomSwitch;
@@ -269,6 +279,9 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     int mPreviewHeight;
     private boolean mIsVideoUI = false;
     private boolean mIsSceneModeLabelClose = false;
+
+    private boolean mNeedsAnimationSetup = true;
+    private boolean mIsAnimating = false;
 
     private void previewUIReady() {
         if((mSurfaceHolder != null && mSurfaceHolder.getSurface().isValid())) {
@@ -384,6 +397,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                closeModeSwitcher(true);
             }
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
@@ -425,17 +439,25 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         initZoomSeekBar();
 
         mFlashButton = (FlashToggleButton) mRootView.findViewById(R.id.flash_button);
+        mFlashButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeModeSwitcher(true);
+                mFlashButton.handleClick();
+            }
+        });
         mModeSelectLayout = (RecyclerView) mRootView.findViewById(R.id.mode_select_layout);
         mModeSelectLayout.setLayoutManager(new LinearLayoutManager(mActivity,
-                LinearLayoutManager.HORIZONTAL, false));
-        mCameraModeAdapter = new Camera2ModeAdapter(mModule.getCameraModeList());
+                LinearLayoutManager.VERTICAL, false));
+        mModeSelectLayout.setVisibility(View.INVISIBLE);
+        mCameraModeAdapter = new Camera2ModeAdapter(mModule.getCameraModeList(), mModule.getCameraModeIconList());
         mCameraModeAdapter.setOnItemClickListener(mModule.getModeItemClickListener());
         mModeSelectLayout.setAdapter(mCameraModeAdapter);
         mSettingsIcon = (ImageView) mRootView.findViewById(R.id.settings);
-        mSettingsIcon.setImageResource(R.drawable.settings);
         mSettingsIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(false);
                 openSettingsMenu();
             }
         });
@@ -509,6 +531,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         });
 
         mCameraControls = (OneUICameraControls) mRootView.findViewById(R.id.camera_controls);
+        mCameraControls.initialize(this);
         mFaceView = (Camera2FaceView) mRootView.findViewById(R.id.face_view);
         mFaceView.initMode();
 
@@ -526,6 +549,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mZoomSwitch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(true);
                 String[] entries = mActivity.getResources().getStringArray(
                         R.array.pref_camera2_zomm_switch_entries);
                 String[] values = mActivity.getResources().getStringArray(
@@ -544,7 +568,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mCancelButton = (ImageView) mRootView.findViewById(R.id.cancel_button);
         final int intentMode = mModule.getCurrentIntentMode();
         if (intentMode != CaptureModule.INTENT_MODE_NORMAL) {
-            mModeSelectLayout.setVisibility(View.GONE);
             mCameraControls.setIntentMode(intentMode);
             mCameraControls.setVideoMode(false);
             mCancelButton.setVisibility(View.VISIBLE);
@@ -602,6 +625,55 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
                 }
             });
         }
+
+        mModeSwitcher = mRootView.findViewById(R.id.mode_switcher);
+        mModeSwitcher.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showModeSwitcher(true);
+            }
+        });
+
+        mExposureText = mRootView.findViewById(R.id.exposure_value);
+        mExposureText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeModeSwitcher(true);
+                mCameraControls.onExposureTextClick();
+            }
+        });
+        mManualText = mRootView.findViewById(R.id.manual_value);
+        mManualText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeModeSwitcher(true);
+                mCameraControls.onManualTextClick();
+            }
+        });
+        mWhiteBalanceText = mRootView.findViewById(R.id.white_balance_value);
+        mWhiteBalanceText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeModeSwitcher(true);
+                mCameraControls.onWhiteBalanceTextClick();
+            }
+        });
+        mIsoText = mRootView.findViewById(R.id.iso_value);
+        mIsoText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeModeSwitcher(true);
+                mCameraControls.onIsoTextClick();
+            }
+        });
+        mZoomSeekbarText = mRootView.findViewById(R.id.zoom_seekbar_value);
+        mZoomSeekbarText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                closeModeSwitcher(true);
+                mCameraControls.onZoomSeekbarTextClick();
+            }
+        });
 
         mActivity.getWindowManager().getDefaultDisplay().getSize(mDisplaySize);
         mScreenRatio = CameraUtil.determineRatio(mDisplaySize.x, mDisplaySize.y);
@@ -674,6 +746,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                closeModeSwitcher(false);
             }
 
             @Override
@@ -962,6 +1035,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mVideoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(true);
                 cancelCountDown();
                 mModule.onVideoButtonClick();
             }
@@ -991,6 +1065,79 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         return mFilterMenuStatus == FILTER_MENU_ON;
     }
 
+    public void setCurrentModeIcon(int mode) {
+        ((ImageView) mModeSwitcher).setImageResource(
+                mModule.getCameraModeIconList().get(mode));
+    }
+
+    private void modeSwitcherAnimSetup() {
+        mModeSelectLayout.setAlpha(0f);
+        mModeSelectLayout.setScaleX(0.3f);
+        mModeSelectLayout.setScaleY(0.3f);
+        mModeSelectLayout.setTranslationY(mModeSwitcher.getY()
+                - mModeSelectLayout.getMeasuredHeight() / 2);
+        mNeedsAnimationSetup = false;
+    }
+
+    public void setSwitcherAnimationNeeded(boolean needed) {
+        mNeedsAnimationSetup = needed;
+    }
+
+    public void showModeSwitcher(boolean animation) {
+        if (mModeSelectLayout == null ||
+                mModeSelectLayout.getVisibility() == View.VISIBLE) {
+            return;
+        }
+
+        if (isPreviewMenuBeingShown()) {
+            removeFilterMenu(true);
+        }
+
+        if (animation) {
+            if (mNeedsAnimationSetup) {
+                modeSwitcherAnimSetup();
+            }
+
+            mModeSelectLayout.setVisibility(View.VISIBLE);
+            mModeSelectLayout.animate()
+                    .alpha(1f)
+                    .scaleX(1f).scaleY(1f)
+                    .translationY(mModeSwitcher.getY()
+                            - mModeSelectLayout.getMeasuredHeight()
+                            + mModeSwitcher.getMeasuredHeight())
+                    .setDuration(ANIMATION_DURATION)
+                    .setListener(null);
+        } else {
+            mModeSelectLayout.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void closeModeSwitcher(boolean animation) {
+        if (mModeSelectLayout == null ||
+                mModeSelectLayout.getVisibility() != View.VISIBLE) {
+            return;
+        }
+
+        if (animation && !mIsAnimating) {
+            mIsAnimating = true;
+            mModeSelectLayout.animate()
+                    .alpha(0f)
+                    .scaleX(0.3f).scaleY(0.3f)
+                    .translationY(mModeSwitcher.getY()
+                            - mModeSelectLayout.getMeasuredHeight() / 2)
+                    .setDuration(ANIMATION_DURATION)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            mModeSelectLayout.setVisibility(View.INVISIBLE);
+                            mIsAnimating = false;
+                        }
+                    });
+        } else {
+            mModeSelectLayout.setVisibility(View.INVISIBLE);
+        }
+    }
+
     public void removeFilterMenu(boolean animate) {
         if (animate) {
             animateSlideOut(mFilterLayout);
@@ -999,9 +1146,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
             if (mFilterLayout != null) {
                 ((ViewGroup) mRootView).removeView(mFilterLayout);
                 mFilterLayout = null;
-            }
-            if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL) {
-                mModeSelectLayout.setVisibility(View.VISIBLE);
             }
             mModule.updateZoomSeekBarVisible();
         }
@@ -1012,6 +1156,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         if (mPreviewLayout != null && mPreviewLayout.getVisibility() == View.VISIBLE) {
             return;
         }
+        closeModeSwitcher(true);
         removeFilterMenu(false);
         Intent intent = new Intent(mActivity, SettingsActivity.class);
         intent.putExtra(SettingsActivity.CAMERA_MODULE, mModule.getCurrenCameraMode());
@@ -1025,10 +1170,12 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         if (value == null)
             return;
 
+        setFrontBackSwitcherDrawable();
         mFrontBackSwitcher.setVisibility(View.VISIBLE);
         mFrontBackSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(false);
                 mModule.writeXMLForWarmAwb();
                 switchFrontBackCamera();
             }
@@ -1055,6 +1202,16 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
             switchToPhotoModeDueToError(false);
         }
         mSettingsManager.setValueIndex(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE, index);
+        setFrontBackSwitcherDrawable();
+    }
+
+    public void setFrontBackSwitcherDrawable() {
+        if (mSettingsManager.getValue(SettingsManager.KEY_FRONT_REAR_SWITCHER_VALUE)
+                .equals("front")) {
+            ((ImageView) mFrontBackSwitcher).setImageResource(R.drawable.ic_switch_back);
+        } else {
+            ((ImageView) mFrontBackSwitcher).setImageResource(R.drawable.ic_switch_front);
+        }
     }
 
     private boolean isSupportFrontCamera(CaptureModule.CameraMode mode) {
@@ -1076,6 +1233,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mSceneModeSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(false);
                 removeFilterMenu(false);
                 Intent intent = new Intent(mActivity, SceneModeActivity.class);
                 intent.putExtra(CameraUtil.KEY_IS_SECURE_CAMERA, mActivity.isSecureCamera());
@@ -1096,10 +1254,10 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mFilterModeSwitcher.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(false);
                 addFilterMode();
                 adjustOrientation();
                 updateMenus();
-                mModeSelectLayout.setVisibility(View.GONE);
                 hideZoomSeekBar();
             }
         });
@@ -1131,7 +1289,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
             } else {
                 mFlashButton.init(true);
             }
-            mVideoButton.setImageResource(R.drawable.video_stop);
+            mVideoButton.setImageResource(R.drawable.shutter_button_video_stop);
             mRecordingTimeView.setText("00:00");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             mMuteButton.setVisibility((mModule.isHSRMode() || mModule.getCurrenCameraMode() == CaptureModule.CameraMode.VIDEO) ? View.VISIBLE : View.INVISIBLE);
@@ -1294,13 +1452,13 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
 
     public void hideUIwhileRecording() {
         mCameraControls.setVideoMode(true);
-        mModeSelectLayout.setVisibility(View.INVISIBLE);
         mSceneModeLabelRect.setVisibility(View.INVISIBLE);
         mDeepZoomModeRect.setVisibility(View.INVISIBLE);
         mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         mSceneModeSwitcher.setVisibility(View.INVISIBLE);
         mSettingsIcon.setVisibility(View.INVISIBLE);
+        closeModeSwitcher(true);
         String value = mSettingsManager.getValue(SettingsManager.KEY_MAKEUP);
         if(value != null && value.equals("0")) {
             mMakeupButton.setVisibility(View.GONE);
@@ -1322,7 +1480,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mPauseButton.setVisibility(View.INVISIBLE);
         if (mModule.getCurrentIntentMode() == CaptureModule.INTENT_MODE_NORMAL) {
             mShutterButton.setVisibility(View.INVISIBLE);
-            mModeSelectLayout.setVisibility(View.VISIBLE);
         }
         mFilterModeSwitcher.setVisibility(View.VISIBLE);
         if (mFilterMenuStatus == FILTER_MENU_ON) {
@@ -1605,6 +1762,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         if (mSceneModeSwitcher != null) mSceneModeSwitcher.setEnabled(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setEnabled(status);
         if (mMakeupButton != null) mMakeupButton.setVisibility(View.GONE);
+        closeModeSwitcher(true);
     }
 
     public void initializeControlByIntent() {
@@ -1612,6 +1770,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         mThumbnail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                closeModeSwitcher(true);
                 if (!CameraControls.isAnimating() && !mModule.isTakingPicture() &&
                         !mModule.isRecordingVideo())
                     mActivity.gotoGallery();
@@ -1700,6 +1859,8 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         }
         mFilterModeSwitcher.setEnabled(enableFilterMenu);
         mSceneModeSwitcher.setEnabled(enableSceneMenu);
+        mNeedsAnimationSetup = true;
+        mModeSelectLayout.bringToFront();
     }
 
     public void toggleProgressBar(boolean show) {
@@ -1738,6 +1899,10 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     private boolean handleBackKeyOnMenu() {
         if (mFilterMenuStatus == FILTER_MENU_ON) {
             removeFilterMenu(true);
+            return true;
+        }
+        if (mModeSelectLayout.getVisibility() == View.VISIBLE) {
+            closeModeSwitcher(true);
             return true;
         }
         return false;
@@ -2008,6 +2173,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
 
     @Override
     public void onSingleTapUp(View view, int x, int y) {
+        closeModeSwitcher(true);
         mModule.onSingleTapUp(view, x, y);
     }
 
@@ -2062,6 +2228,7 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
     }
 
     public void pressShutterButton() {
+        closeModeSwitcher(true);
         if (mShutterButton.isInTouchMode()) {
             mShutterButton.requestFocusFromTouch();
         } else {
@@ -2266,7 +2433,6 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
         int mode = index % modeListSize;
         mModule.setCameraModeSwitcherAllowed(false);
         mCameraModeAdapter.setSelectedPosition(mode);
-        mModeSelectLayout.smoothScrollToPosition(mode);
         mModule.selectCameraMode(mode);
     }
 
@@ -2280,12 +2446,12 @@ public class CaptureUI implements PreviewGestures.SingleTapListener,
             }
         }
         mCameraModeAdapter.setSelectedPosition(photoModeIndex);
-        mModeSelectLayout.smoothScrollToPosition(photoModeIndex);
         if (switchCamera) {
             mModule.selectCameraMode(photoModeIndex);
         } else {
             mModule.setNextSceneMode(photoModeIndex);
         }
+        setFrontBackSwitcherDrawable();
     }
 
 }

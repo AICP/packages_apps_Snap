@@ -23,11 +23,9 @@ import java.io.IOException;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -63,6 +61,16 @@ public class Storage {
     public static final long PREPARING = -2L;
     public static final long UNKNOWN_SIZE = -3L;
     public static final long LOW_STORAGE_THRESHOLD_BYTES = 60 * 1024 * 1024L;
+
+    private static boolean sSaveSDCard = false;
+
+    public static boolean isSaveSDCard() {
+        return sSaveSDCard;
+    }
+
+    public static void setSaveSDCard(boolean saveSDCard) {
+        sSaveSDCard = saveSDCard;
+    }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private static void setImageSize(ContentValues values, int width, int height) {
@@ -110,12 +118,19 @@ public class Storage {
     }
 
     // Save the image with a given mimeType and add it the MediaStore.
-    public static Uri addImage(Context context, String title,
-            ExifInterface exif, byte[] jpeg, String mimeType) {
+    public static Uri addImage(ContentResolver resolver, String title, long date,
+            Location location, int orientation, ExifInterface exif, byte[] jpeg, int width,
+            int height, String mimeType) {
 
         String path = generateFilepath(title, mimeType);
-        writeFile(path, jpeg, exif, mimeType);
-        return addImage(context, path);
+        int size = writeFile(path, jpeg, exif, mimeType);
+        // Try to get the real image size after add exif.
+        File f = new File(path);
+        if (f.exists() && f.isFile()) {
+            size = (int) f.length();
+        }
+        return addImage(resolver, title, date, location, orientation, exif,
+                size, path, width, height, mimeType);
     }
 
     // Get a ContentValues object for the given photo data
@@ -168,15 +183,26 @@ public class Storage {
     }
 
     // Add the image to media store.
-    public static Uri addImage(Context context, String path) {
-        // Scan file
-        MediaScannerConnection.scanFile(
-                context,
-                new String[] { path },
-                null /* no mimetype, let scanner guess */,
-                null /* no callback */);
+    public static Uri addImage(ContentResolver resolver, String title,
+            long date, Location location, int orientation, ExifInterface exif,int jpegLength,
+            String path, int width, int height, String mimeType) {
+        // Insert into MediaStore.
+        ContentValues values =
+                getContentValuesForData(title, date, location, orientation, exif, jpegLength, path,
+                        width, height, mimeType);
 
-         return Uri.fromFile(new File(path));
+         return insertImage(resolver, values);
+    }
+
+    public static Uri addImage(ContentResolver resolver, String title,
+                               long date, Location location, int orientation,int jpegLength,
+                               String path, int width, int height, String mimeType) {
+        // Insert into MediaStore.
+        ContentValues values =
+                getContentValuesForData(title, date, location, orientation, null, jpegLength,
+                        path, width, height, mimeType);
+
+        return insertImage(resolver, values);
     }
 
     public static long addRawImage(String title, byte[] data,
@@ -191,20 +217,32 @@ public class Storage {
         return size;
     }
 
+    public static Uri addHeifImage(ContentResolver resolver, String title, long date,
+                                   Location location, int orientation, ExifInterface exif, String path, int width,
+                                   int height, int quality, String mimeType) {
+        File f = new File(path);
+        int size = 0;
+        if (f.exists() && f.isFile()) {
+            size = (int) f.length();
+        }
+        return addImage(resolver, title, date, location, orientation,
+                size, path, width, height, mimeType);
+    }
+
     // Overwrites the file and updates the MediaStore, or inserts the image if
     // one does not already exist.
-    public static void updateImage(Uri imageUri, Context context, String title, long date,
+    public static void updateImage(Uri imageUri, ContentResolver resolver, String title, long date,
             Location location, int orientation, ExifInterface exif, byte[] jpeg, int width,
             int height, String mimeType) {
         String path = generateFilepath(title, mimeType);
         writeFile(path, jpeg, exif, mimeType);
-        updateImage(imageUri, context, title, date, location, orientation, jpeg.length, path,
+        updateImage(imageUri, resolver, title, date, location, orientation, jpeg.length, path,
                 width, height, mimeType);
     }
 
     // Updates the image values in MediaStore, or inserts the image if one does
     // not already exist.
-    public static void updateImage(Uri imageUri, Context context, String title,
+    public static void updateImage(Uri imageUri, ContentResolver resolver, String title,
             long date, Location location, int orientation, int jpegLength,
             String path, int width, int height, String mimeType) {
 
@@ -213,7 +251,6 @@ public class Storage {
                         width, height, mimeType);
 
         // Update the MediaStore
-        ContentResolver resolver = context.getContentResolver();
         int rowsModified = resolver.update(imageUri, values, null, null);
 
         if (rowsModified == 0) {
@@ -225,13 +262,6 @@ public class Storage {
             throw new IllegalStateException("Bad number of rows (" + rowsModified
                     + ") updated for uri: " + imageUri);
         }
-
-        // Scan file
-        MediaScannerConnection.scanFile(
-                context,
-                new String[] { path },
-                null /* no mimetype, let scanner guess */,
-                null /* no callback */);
     }
 
     public static void deleteImage(ContentResolver resolver, Uri uri) {
@@ -252,10 +282,18 @@ public class Storage {
             }else if(pictureFormat.equalsIgnoreCase("heics")) {
                 suffix = ".heics";
             }
-            return DIRECTORY + '/' + title + suffix;
+            if (isSaveSDCard() && SDCard.instance().isWriteable()) {
+                return SDCard.instance().getDirectory() + '/' + title + suffix;
+            } else {
+                return DIRECTORY + '/' + title + suffix;
+            }
         } else if (pictureFormat.equalsIgnoreCase("yuv")){
             String suffix = ".yuv";
-            return DIRECTORY + '/' + title + suffix;
+            if (isSaveSDCard() && SDCard.instance().isWriteable()) {
+                return SDCard.instance().getDirectory() + '/' + title + suffix;
+            } else {
+                return DIRECTORY + '/' + title + suffix;
+            }
         } else {
             File dir = new File(RAW_DIRECTORY);
             dir.mkdirs();
@@ -263,7 +301,22 @@ public class Storage {
         }
     }
 
-    public static long getAvailableSpace() {
+    private static long getSDCardAvailableSpace() {
+        if (SDCard.instance().isWriteable()) {
+            File dir = new File(SDCard.instance().getDirectory());
+            dir.mkdirs();
+            try {
+                StatFs stat = new StatFs(SDCard.instance().getDirectory());
+                long ret = stat.getAvailableBlocks() * (long) stat.getBlockSize();
+                return ret;
+            } catch (Exception e) {
+            }
+            return UNKNOWN_SIZE;
+        }
+        return UNKNOWN_SIZE;
+    }
+
+    private static long getInternalStorageAvailableSpace() {
         String state = Environment.getExternalStorageState();
         Log.d(TAG, "External storage state=" + state);
         if (Environment.MEDIA_CHECKING.equals(state)) {
@@ -286,6 +339,14 @@ public class Storage {
             Log.i(TAG, "Failed to access external storage", e);
         }
         return UNKNOWN_SIZE;
+    }
+
+    public static long getAvailableSpace() {
+        if (isSaveSDCard()) {
+            return getSDCardAvailableSpace();
+        } else {
+            return getInternalStorageAvailableSpace();
+        }
     }
 
     public static long getTotalSpace(){
@@ -311,6 +372,16 @@ public class Storage {
             Log.i(TAG, "Failed to access external storage", e);
         }
         return UNKNOWN_SIZE;
+    }
+
+    public static boolean switchSavePath() {
+        if (!isSaveSDCard()
+                && getInternalStorageAvailableSpace() <= LOW_STORAGE_THRESHOLD_BYTES
+                && getSDCardAvailableSpace() > LOW_STORAGE_THRESHOLD_BYTES) {
+            setSaveSDCard(true);
+            return true;
+        }
+        return false;
     }
 
     /**

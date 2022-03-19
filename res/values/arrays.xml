@@ -42,6 +42,17 @@
         <item>320x240</item>
     </string-array>
 
+    <!-- Camera Preference save path entries -->
+    <string-array name="pref_camera_savepath_entries" translatable="false">
+        <item>@string/pref_camera_savepath_entry_0</item>
+        <item>@string/pref_camera_savepath_entry_1</item>
+    </string-array>
+
+    <string-array name="pref_camera_savepath_entryvalues" translatable="false">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
     <!-- These values correspond to the time interval between frame capture in millseconds
     for time lapse recording -->
     <string-array name="pref_video_time_lapse_frame_interval_entryvalues" translatable="false">
@@ -685,5 +696,31 @@
         <item>180</item>
         <item>270</item>
     </string-array>
+
+    <array name="camera_modes_back">
+        <item>@drawable/ic_switch_video</item>
+        <item>@drawable/ic_switch_hfr</item>
+        <item>@drawable/ic_switch_camera</item>
+        <item>@drawable/ic_switch_bokeh</item>´
+        <item>@drawable/ic_switch_sat</item>
+        <item>@drawable/ic_switch_promode</item>
+        <item>@drawable/ic_cam_switcher_qr</item>
+    </array>
+
+    <array name="camera_modes_front">
+        <item>@drawable/ic_switch_video</item>
+        <item>@drawable/ic_switch_camera</item>
+    </array>
+
+    <array name="flash_modes_camera">
+        <item>@drawable/ic_flash_off</item>
+        <item>@drawable/ic_flash_auto</item>
+        <item>@drawable/ic_flash_on</item>
+    </array>
+
+    <array name="flash_modes_video">
+        <item>@drawable/ic_flash_off</item>
+        <item>@drawable/ic_flash_on</item>
+    </array>
 
 </resources>

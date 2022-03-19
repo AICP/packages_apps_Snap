@@ -494,7 +494,9 @@ public class PanoCaptureModule implements CameraModule, PhotoController {
                 Log.e(TAG, "Cannot set exif for " + filepath, e);
                 Storage.writeFile(filepath, jpegData);
             }
-            return Storage.addImage(mActivity, filepath);
+            int jpegLength = (int) (new File(filepath).length());
+            return Storage.addImage(mContentResolver, filename, timeTaken, loc, orientation,
+                    jpegLength, filepath, width, height, LocalData.MIME_TYPE_JPEG);
         }
         return null;
     }
@@ -680,6 +682,11 @@ public class PanoCaptureModule implements CameraModule, PhotoController {
 
     @Override
     public void resizeForPreviewAspectRatio() {
+
+    }
+
+    @Override
+    public void onSwitchSavePath() {
 
     }
 

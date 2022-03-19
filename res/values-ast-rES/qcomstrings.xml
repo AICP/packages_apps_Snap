@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) 2012-2014, 2016-2017 The Linux Foundation. All rights reserved.
+
+    Not a Contribution.
+
+    Copyright (C) 2007 The Android Open Source Project
+    Copyright (C) 2017-2020 The LineageOS Project
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<resources>
+    <string name="pref_camera_manual_exp_title">Esposición manual</string>
+    <string name="pref_camera_manual_focus_title">Enfoque manual</string>
+    <string name="pref_camera_facedetection_title">Deteición facial</string>
+    <string name="pref_camera_hfr_entry_2x">Cámara lenta a 60 FPS</string>
+    <string name="pref_camera_hfr_entry_3x">Cámara lenta a 90 FPS</string>
+    <string name="pref_camera_hfr_entry_4x">Cámara lenta a 120 FPS</string>
+    <string name="pref_camera_hfr_entry_8x">Cámara lenta a 240 FPS</string>
+    <string name="pref_camera_hfr_entry_16x">Cámara lenta a 480 FPS</string>
+    <string name="pref_camera_hfr_entry_32x">Cámara lenta a 960 FPS</string>
+    <string name="pref_camera_hfr_entry_hsr_60">Velocidá alta a 60 FPS</string>
+    <string name="pref_camera_hfr_entry_hsr_90">Velocidá alta a 90 FPS</string>
+    <string name="pref_camera_hfr_entry_hsr_120">Velocidá alta a 120 FPS</string>
+    <string name="pref_camera_hfr_entry_hsr_240">Velocidá alta a 240 FPS</string>
+    <string name="pref_camera_hfr_entry_hsr_480">Velocidá alta a 480 FPS</string>
+    <string name="pref_camera_hfr_entry_hsr_960">Velocidá alta a 960 FPS</string>
+    <string name="pref_camera_hfr_entry_2x_ssm_120">Cámara superlenta 120-&gt;240</string>
+    <string name="pref_camera_hfr_entry_4x_ssm_120">Cámara superlenta 120-&gt;480</string>
+    <string name="pref_camera_hfr_entry_2x_ssm_240">Cámara superlenta 240-&gt;480</string>
+    <string name="pref_camera_hfr_entry_4x_ssm_240">Cámara superlenta 240-&gt;960</string>
+    <string name="pref_camera_hfr_entry_2x_ssm_480">Cámara superlenta 480-&gt;960</string>
+    <string name="pref_camera_hfr_entry_4x_ssm_480">Cámara superlenta 480-&gt;1920</string>
+    <string name="pref_camera_hfr_entry_2x_ssm_960">Cámara superlenta 960-&gt;1920</string>
+    <string name="pref_camera_hfr_entry_4x_ssm_960">Cámara superlenta 960-&gt;3840</string>
+    <string name="pref_camera_noise_reduction_entry_high_quality">Calidá alta</string>
+    <string name="pref_camera_iso_title">ISO</string>
+    <string name="pref_camera_iso_entry_iso50">ISO50</string>
+    <string name="pref_camera_iso_entry_iso100">ISO100</string>
+    <string name="pref_camera_iso_entry_iso125">ISO125</string>
+    <string name="pref_camera_iso_entry_iso150">ISO150</string>
+    <string name="pref_camera_iso_entry_iso200">ISO200</string>
+    <string name="pref_camera_iso_entry_iso250">ISO250</string>
+    <string name="pref_camera_iso_entry_iso300">ISO300</string>
+    <string name="pref_camera_iso_entry_iso320">ISO320</string>
+    <string name="pref_camera_iso_entry_iso350">ISO350</string>
+    <string name="pref_camera_iso_entry_iso400">ISO400</string>
+    <string name="pref_camera_iso_entry_iso450">ISO450</string>
+    <string name="pref_camera_iso_entry_iso500">ISO500</string>
+    <string name="pref_camera_iso_entry_iso600">ISO600</string>
+    <string name="pref_camera_iso_entry_iso640">ISO640</string>
+    <string name="pref_camera_iso_entry_iso700">ISO700</string>
+    <string name="pref_camera_iso_entry_iso800">ISO800</string>
+    <string name="pref_camera_iso_entry_iso1000">ISO1000</string>
+    <string name="pref_camera_iso_entry_iso1200">ISO1200</string>
+    <string name="pref_camera_iso_entry_iso1250">ISO1250</string>
+    <string name="pref_camera_iso_entry_iso1500">ISO1500</string>
+    <string name="pref_camera_iso_entry_iso1600">ISO1600</string>
+    <string name="pref_camera_iso_entry_iso2000">ISO2000</string>
+    <string name="pref_camera_iso_entry_iso2500">ISO2500</string>
+    <string name="pref_camera_iso_entry_iso2700">ISO2700</string>
+    <string name="pref_camera_iso_entry_iso3200">ISO3200</string>
+    <string name="pref_camera_iso_entry_iso6400">ISO6400</string>
+    <string name="pref_camera_iso_entry_iso12800">ISO12800</string>
+    <string name="pref_camera_antibanding_entry_1">50 Hz (Europa)</string>
+    <string name="pref_camera_sharpness_entry_level0">Nivel 0</string>
+    <string name="pref_camera_sharpness_entry_level1">Nivel 1</string>
+    <string name="pref_camera_sharpness_entry_level2">Nivel 2 (por defeutu)</string>
+    <string name="pref_camera_sharpness_entry_level3">Nivel 3</string>
+    <string name="pref_camera_sharpness_entry_level4">Nivel 4</string>
+    <string name="pref_camera_sharpness_entry_level5">Nivel 5</string>
+    <string name="pref_camera_sharpness_entry_level6">Nivel 6</string>
+    <string name="pref_camera_contrast_entry_level0">Nivel 0</string>
+    <string name="pref_camera_contrast_entry_level1">Nivel 1</string>
+    <string name="pref_camera_contrast_entry_level2">Nivel 2</string>
+    <string name="pref_camera_contrast_entry_level3">Nivel 3</string>
+    <string name="pref_camera_contrast_entry_level4">Nivel 4</string>
+    <string name="pref_camera_contrast_entry_level5">Nivel 5 (por defeutu)</string>
+    <string name="pref_camera_contrast_entry_level6">Nivel 6</string>
+    <string name="pref_camera_contrast_entry_level7">Nivel 7</string>
+    <string name="pref_camera_contrast_entry_level8">Nivel 8</string>
+    <string name="pref_camera_contrast_entry_level9">Nivel 9</string>
+    <string name="pref_camera_contrast_entry_level10">Nivel 10</string>
+    <string name="pref_camera_saturation_entry_level0">Nivel 0</string>
+    <string name="pref_camera_saturation_entry_level1">Nivel 1</string>
+    <string name="pref_camera_saturation_entry_level2">Nivel 2</string>
+    <string name="pref_camera_saturation_entry_level3">Nivel 3</string>
+    <string name="pref_camera_saturation_entry_level4">Nivel 4</string>
+    <string name="pref_camera_saturation_entry_level5">Nivel 5 (por defeutu)</string>
+    <string name="pref_camera_saturation_entry_level6">Nivel 6</string>
+    <string name="pref_camera_saturation_entry_level7">Nivel 7</string>
+    <string name="pref_camera_saturation_entry_level8">Nivel 8</string>
+    <string name="pref_camera_saturation_entry_level9">Nivel 9</string>
+    <string name="pref_camera_saturation_entry_level10">Nivel 10</string>
+    <string name="pref_camera_contrast_title">Contraste</string>
+    <string name="pref_camera_saturation_title">Saturación</string>
+    <string name="on_switch_save_path_to_sdcard">Nun hai abondu espaciu d\'almacenamientu. El camín de guardáu cambió a la tarxeta SD</string>
+    <string name="storage_not_enough">Nun hai abondu espaciu d\'almacenamientu</string>
+    <string name="pref_camera_video_rotation_entry_0">0 graos</string>
+    <string name="pref_camera_video_rotation_entry_90">90 graos</string>
+    <string name="pref_camera_video_rotation_entry_180">180 graos</string>
+    <string name="pref_camera_video_rotation_entry_270">270 graos</string>
+    <string name="text_tsmakeup_alert_quit">Encaboxar</string>
+    <string name="pref_camera2_noise_reduction_entry_high_quality">Calidá alta</string>
+    <string name="pref_camera2_multi_cameras_title">Cámares múltiples</string>
+    <string name="bestpicture_done">FECHO</string>
+    <string name="pref_camera2_timer_entry_2sec">2 segundos</string>
+    <string name="pref_camera2_timer_entry_5sec">5 segundos</string>
+    <string name="pref_camera2_timer_entry_10sec">10 segundos</string>
+    <string name="makeup_ui_ok_button">D\'acuerdu</string>
+    <string name="perf_camera2_preferences_category_general">Xeneral</string>
+    <string name="perf_camera2_preferences_category_video">Cámara de videu</string>
+    <string name="perf_camera2_preferences_category_system">Sistema</string>
+    <string name="pref_camera2_scene_mode_pro_instructional_content">Col mou «Pro» pues controlar manualmente los axustes del ISO, la esposición, el balance de blancos y l\'enfoque. Vas tener toos estos axustes avanzaos nun sitiu amañosu.</string>
+    <string name="pref_camera2_scene_mode_deepzoom_instructional_content">Col mou «DeepZoom» pues facer una semeya col zoom ameyoráu x2 ó x4.</string>
+    <string name="pref_camera2_scene_mode_deepportrait_instructional_content">Col mou «DeepPortrait» pues facer selfies col fondu desenfocáu. Pues usar l\'eslizador p\'axustar la cantidá de desenfoque.</string>
+    <string name="pref_camera2_not_show_again">Nun volver amosar</string>
+    <string name="pref_camera2_scene_mode_instructional_ok">D\'acuerdu</string>
+    <string name="pref_camera2_saturation_level_title">Saturación</string>
+    <string name="pref_camera2_saturation_level_entry_0">Nivel 0</string>
+    <string name="pref_camera2_saturation_level_entry_1">Nivel 1</string>
+    <string name="pref_camera2_saturation_level_entry_2">Nivel 2</string>
+    <string name="pref_camera2_saturation_level_entry_3">Nivel 3</string>
+    <string name="pref_camera2_saturation_level_entry_4">Nivel 4</string>
+    <string name="pref_camera2_saturation_level_entry_5">Nivel 5 (por defeutu)</string>
+    <string name="pref_camera2_saturation_level_entry_6">Nivel 6</string>
+    <string name="pref_camera2_saturation_level_entry_7">Nivel 7</string>
+    <string name="pref_camera2_saturation_level_entry_8">Nivel 8</string>
+    <string name="pref_camera2_saturation_level_entry_9">Nivel 9</string>
+    <string name="pref_camera2_saturation_level_entry_10">Nivel 10</string>
+    <string name="pref_camera2_anti_banding_level_entry_50hz">50 Hz (Europa)</string>
+    <string name="pref_camera_zoom_title">Zoom</string>
+    <string name="pref_camera_zoom_entry_1x">1x</string>
+    <string name="pref_camera_zoom_entry_2x">2x</string>
+    <string name="pref_camera_zoom_entry_3x">3x</string>
+    <string name="pref_camera_zoom_entry_4x">4x</string>
+    <string name="pref_camera_zoom_entry_5x">5x</string>
+    <string name="pref_camera_zoom_entry_6x">6x</string>
+    <string name="pref_camera_zoom_entry_7x">7x</string>
+    <string name="pref_camera_zoom_entry_8x">8x</string>
+    <string name="pref_camera_zoom_entry_9x">9x</string>
+    <string name="pref_camera_zoom_entry_10x">10x</string>
+    <string name="pref_camera2_facial_contour_title">Contornu facial</string>
+    <string name="pref_camera2_face_detection_mode_title">Mou de la deteición de cares</string>
+    <string name="pref_camera2_face_detection_entry_simple">Simple</string>
+    <string name="pref_camera2_face_detection_entry_full">Completu</string>
+    <string name="pref_camera2_videoencoderprofile_title">Perfil del codificador</string>
+    <string name="pref_camera2_afmode_entry_continuous_video">Videu continuu</string>
+    <string name="pref_camera2_afmode_entry_continuous_picture">Semeya continua</string>
+    <string name="pref_camera2_afmode_entry_edof">Fondura estendida del enfoque</string>
+    <string name="pref_camera2_fovc_title">FOVC de videu</string>
+    <string name="pref_camera2_switcher_title">Conmutador de cámares</string>
+    <string name="pref_camera2_force_aux_title">Forciar l\'AUX</string>
+    <string name="pref_camera2_stats_visualizer_title">Visualizador d\'estadístiques</string>
+    <string name="pref_camera_tone_mapping_title">Mapéu de tonos</string>
+    <string name="pref_multi_camera_hal_zsl_title">HAL ZSL</string>
+    <string name="pref_multi_camera_picturesize1_title">Tamañu de la semeya 1</string>
+    <string name="pref_multi_camera_picturesize2_title">Tamañu de la semeya 2</string>
+    <string name="pref_multi_camera_picturesize3_title">Tamañu de la semeya 3</string>
+    <string name="lock_af_ae_label">Bloquéu d\'EA/FA</string>
+</resources>

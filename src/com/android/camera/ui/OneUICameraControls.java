@@ -25,17 +25,21 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Display;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.android.camera.CaptureModule;
+import com.android.camera.CaptureUI;
 import com.android.camera.Storage;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 
@@ -45,7 +49,7 @@ public class OneUICameraControls extends RotatableLayout {
 
     private static final String TAG = "CAM_Controls";
 
-    private static final float TOP_PANEL_SPACE_NUM = 4f;
+    private static final float TOP_PANEL_SPACE_NUM = 5f;
     private static final float BOTTOM_PANEL_SPACE_NUM = 5f;
     private static final float PANEL_INDEX_0 = 0f;
     private static final float PANEL_INDEX_1 = 1f;
@@ -68,9 +72,11 @@ public class OneUICameraControls extends RotatableLayout {
     private View mMakeupSeekBarHighText;
     private View mMakeupSeekBarLayout;
     private View mCancelButton;
+    private View mModeSwitcher;
     private ViewGroup mProModeLayout;
     private View mSettingsButton;
 
+    private RecyclerView mModeSelectLayout;
     private ArrowTextView mRefocusToast;
 
     private static final int WIDTH_GRID = 5;
@@ -109,6 +115,8 @@ public class OneUICameraControls extends RotatableLayout {
     private RotateLayout mWhiteBalanceRotateLayout;
     private RotateLayout mIsoRotateLayout;
     private RotateLayout mZoomSeekBarLayout;
+
+    private CaptureUI mCUI;
 
     public OneUICameraControls(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -167,6 +175,7 @@ public class OneUICameraControls extends RotatableLayout {
         mRemainingPhotos = (LinearLayout) findViewById(R.id.remaining_photos);
         mRemainingPhotosText = (TextView) findViewById(R.id.remaining_photos_text);
         mCancelButton = findViewById(R.id.cancel_button);
+        mModeSwitcher = findViewById(R.id.mode_switcher);
         mProModeLayout = (ViewGroup) findViewById(R.id.pro_mode_layout);
 
         mExposureText = (TextView) findViewById(R.id.exposure_value);
@@ -183,75 +192,13 @@ public class OneUICameraControls extends RotatableLayout {
         mIsoRotateLayout = (RotateLayout) findViewById(R.id.iso_rotate_layout);
         mZoomSeekBarLayout = (RotateLayout) findViewById(R.id.zoom_seekbar_layout);
 
-        mExposureText.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetProModeIcons();
-                int mode = mProMode.getMode();
-                if (mode == ProMode.EXPOSURE_MODE) {
-                    mProMode.setMode(ProMode.NO_MODE);
-                } else {
-                    mExposureText.setSelected(true);
-                    mProMode.setMode(ProMode.EXPOSURE_MODE);
-                }
-            }
-        });
-        mManualText.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetProModeIcons();
-                int mode = mProMode.getMode();
-                if (mode == ProMode.MANUAL_MODE) {
-                    mProMode.setMode(ProMode.NO_MODE);
-                } else {
-                    mManualText.setSelected(true);
-                    mProMode.setMode(ProMode.MANUAL_MODE);
-                }
-            }
-        });
-        mWhiteBalanceText.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetProModeIcons();
-                int mode = mProMode.getMode();
-                if (mode == ProMode.WHITE_BALANCE_MODE) {
-                    mProMode.setMode(ProMode.NO_MODE);
-                } else {
-                    mWhiteBalanceText.setSelected(true);
-                    mProMode.setMode(ProMode.WHITE_BALANCE_MODE);
-                }
-            }
-        });
-        mIsoText.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetProModeIcons();
-                int mode = mProMode.getMode();
-                if (mode == ProMode.ISO_MODE) {
-                    mProMode.setMode(ProMode.NO_MODE);
-                } else {
-                    mIsoText.setSelected(true);
-                    mProMode.setMode(ProMode.ISO_MODE);
-                }
-            }
-        });
-        mZoomSeekbarText.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetProModeIcons();
-                int mode = mProMode.getMode();
-                if (mode == ProMode.ZOOM_MODE) {
-                    mProMode.setMode(ProMode.NO_MODE);
-                } else {
-                    mZoomSeekbarText.setSelected(true);
-                    mProMode.setMode(ProMode.ZOOM_MODE);
-                }
-            }
-        });
+        mModeSelectLayout = (RecyclerView) findViewById(R.id.mode_select_layout);
+        mModeSelectLayout.setVisibility(View.INVISIBLE);
+
         mViews = new View[]{
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
-                mFlashButton,
-                mPreview, mPauseButton, mCancelButton, mSettingsButton
+                mFlashButton, mPreview, mPauseButton, mCancelButton,
+                mSettingsButton, mModeSwitcher
         };
         mBottomLargeSize = getResources().getDimensionPixelSize(
                 R.dimen.one_ui_bottom_large);
@@ -320,24 +267,80 @@ public class OneUICameraControls extends RotatableLayout {
         }
     }
 
+    public void onExposureTextClick() {
+        resetProModeIcons();
+        int mode = mProMode.getMode();
+        if (mode == ProMode.EXPOSURE_MODE) {
+             mProMode.setMode(ProMode.NO_MODE);
+        } else {
+            mExposureText.setSelected(true);
+            mProMode.setMode(ProMode.EXPOSURE_MODE);
+        }
+    }
+
+    public void onManualTextClick() {
+        resetProModeIcons();
+        int mode = mProMode.getMode();
+        if (mode == ProMode.MANUAL_MODE) {
+            mProMode.setMode(ProMode.NO_MODE);
+        } else {
+            mManualText.setSelected(true);
+            mProMode.setMode(ProMode.MANUAL_MODE);
+        }
+    }
+
+    public void onWhiteBalanceTextClick() {
+        resetProModeIcons();
+        int mode = mProMode.getMode();
+        if (mode == ProMode.WHITE_BALANCE_MODE) {
+            mProMode.setMode(ProMode.NO_MODE);
+        } else {
+            mWhiteBalanceText.setSelected(true);
+            mProMode.setMode(ProMode.WHITE_BALANCE_MODE);
+        }
+    }
+
+    public void onIsoTextClick() {
+        resetProModeIcons();
+        int mode = mProMode.getMode();
+        if (mode == ProMode.ISO_MODE) {
+            mProMode.setMode(ProMode.NO_MODE);
+        } else {
+            mIsoText.setSelected(true);
+            mProMode.setMode(ProMode.ISO_MODE);
+        }
+    }
+
+    public void onZoomSeekbarTextClick() {
+        resetProModeIcons();
+        int mode = mProMode.getMode();
+        if (mode == ProMode.ZOOM_MODE) {
+           mProMode.setMode(ProMode.NO_MODE);
+        } else {
+            mZoomSeekbarText.setSelected(true);
+            mProMode.setMode(ProMode.ZOOM_MODE);
+        }
+    }
+
+    public void initialize(CaptureUI cUI) {
+        mCUI = cUI;
+    }
+
+    public void closeModeSwitcher(boolean animate) {
+        mCUI.closeModeSwitcher(animate);
+    }
+
     private void setLocation(View v, boolean top, float idx) {
         if(v == null) {
             return;
         }
-        int w = v.getMeasuredWidth();
         int h = v.getMeasuredHeight();
         if (top) {
             v.setY((mTop - h) / 2);
         } else {
             v.setY(mHeight - mBottom + (mBottom - h) / 2);
         }
-        float bW;
-        if (top) {
-            bW = mWidth / TOP_PANEL_SPACE_NUM;
-        } else {
-            bW = mWidth / BOTTOM_PANEL_SPACE_NUM;
-        }
-        v.setX(bW * idx + (bW - w) / 2);
+        v.setX(getLocationX(v, top, idx));
     }
 
     private void setLocationCustomBottom(View v, float x, float y) {
@@ -352,10 +355,32 @@ public class OneUICameraControls extends RotatableLayout {
         v.setX(bW * x);
     }
 
+    private float getLocationX(View v, boolean top, float idx) {
+        int w = v.getMeasuredWidth();
+        float bW;
+        if (top) {
+            bW = mWidth / TOP_PANEL_SPACE_NUM;
+        } else {
+            bW = mWidth / BOTTOM_PANEL_SPACE_NUM;
+        }
+        return (bW * idx + (bW - w) / 2);
+    }
+
+    private void setLocationCameraModePanel() {
+        if(mModeSelectLayout == null) {
+            return;
+        }
+        mModeSelectLayout.setY(mModeSwitcher.getY() - mModeSelectLayout.getMeasuredHeight()
+                + mModeSwitcher.getMeasuredHeight());
+        mModeSelectLayout.setX(getLocationX(mModeSelectLayout, true, 4f));
+    }
+
     private void setLocation(int w, int h) {
         int rotation = getUnifiedRotation();
         setLocation(mSceneModeSwitcher, true, PANEL_INDEX_0);
         setLocation(mFilterModeSwitcher, true, PANEL_INDEX_1);
+        setLocation(mModeSwitcher, false, 4f);
+        setLocationCameraModePanel();
         if (mIsVideoMode) {
             setLocation(mMute, true, PANEL_INDEX_1);
             setLocation(mFlashButton, true, PANEL_INDEX_2);
@@ -365,9 +390,9 @@ public class OneUICameraControls extends RotatableLayout {
             setLocation(mVideoShutter, false, PANEL_INDEX_2);
             setLocation(mExitBestPhotpMode ,false, PANEL_INDEX_4);
         } else {
-            setLocation(mFlashButton, true, PANEL_INDEX_2);
-            setLocation(mSettingsButton,true, PANEL_INDEX_3);
-            setLocation(mFrontBackSwitcher, false, 3.15f);
+            setLocation(mFlashButton, true, PANEL_INDEX_3);
+            setLocation(mSettingsButton,true, PANEL_INDEX_4);
+            setLocation(mFrontBackSwitcher, true, PANEL_INDEX_2);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, PANEL_INDEX_2);
                 setLocation(mCancelButton, false, 0.85f);
@@ -518,7 +543,7 @@ public class OneUICameraControls extends RotatableLayout {
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
                 mFlashButton, mSettingsButton, mPreview,
                 mMute, mMakeupSeekBarLowText, mMakeupSeekBarHighText,
-                mPauseButton, mExitBestPhotpMode
+                mPauseButton, mExitBestPhotpMode, mModeSwitcher
         };
 
         for (View v : views) {
@@ -532,6 +557,13 @@ public class OneUICameraControls extends RotatableLayout {
         mIsoRotateLayout.setOrientation(orientation, animation);
         mZoomSeekBarLayout.setOrientation(orientation, animation);
         mProMode.setOrientation(orientation);
+
+        // Reorient the camera modes
+        for (int i = 0; i < ((ViewGroup) mModeSelectLayout).getChildCount(); i++) {
+            ((Rotatable) ((ViewGroup) mModeSelectLayout.getChildAt(i))
+                    .getChildAt(0)).setOrientation(orientation, animation);
+        }
+
         layoutRemaingPhotos();
     }
 

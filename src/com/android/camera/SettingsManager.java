@@ -130,6 +130,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String SCENE_MODE_SUNSET_STRING = "10";
     public static final String SCENE_MODE_LANDSCAPE_STRING = "4";
+    public static final String KEY_CAMERA_SAVEPATH = "pref_camera2_savepath_key";
     public static final String KEY_RECORD_LOCATION = "pref_camera2_recordlocation_key";
     public static final String KEY_JPEG_QUALITY = "pref_camera2_jpegquality_key";
     public static final String KEY_FOCUS_MODE = "pref_camera2_focusmode_key";
@@ -250,6 +251,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     private boolean mIsFrontCameraPresent = false;
     private boolean mHasMultiCamera = false;
     private boolean mIsHFRSupported = false;
+    private boolean mIsHFRSupportedOnCurrentResolution = false;
     private JSONObject mDependency;
     private int mCameraId;
     private Set<String> mFilteredKeys;
@@ -1076,6 +1078,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             }
         }
         // filter unsupported preferences
+        ListPreference savePath = mPreferenceGroup.findPreference(KEY_CAMERA_SAVEPATH);
         ListPreference forceAUX = mPreferenceGroup.findPreference(KEY_FORCE_AUX);
         ListPreference whiteBalance = mPreferenceGroup.findPreference(KEY_WHITE_BALANCE);
         ListPreference flashMode = mPreferenceGroup.findPreference(KEY_FLASH_MODE);
@@ -1115,6 +1118,13 @@ public class SettingsManager implements ListMenu.SettingsListener {
             mFilteredKeys.add(forceAUX.getKey());
         }
         buildCameraId();
+
+        if (savePath != null) {
+            if (filterUnsupportedOptions(savePath, getSupportedSavePaths(cameraId))) {
+                mFilteredKeys.add(savePath.getKey());
+            }
+        }
+
 
         if (whiteBalance != null) {
             if (filterUnsupportedOptions(whiteBalance, getSupportedWhiteBalanceModes(cameraId))) {
@@ -1526,6 +1536,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return mIsHFRSupported;
     }
 
+    public boolean isHFRSupportedOnCurrentResolution() {
+        return mIsHFRSupportedOnCurrentResolution;
+    }
+
     private void filterVideoEncoderProfileOptions() {
         ListPreference videoEncoderProfilePref =
                 mPreferenceGroup.findPreference(KEY_VIDEO_ENCODER_PROFILE);
@@ -1696,12 +1710,14 @@ public class SettingsManager implements ListMenu.SettingsListener {
                                 rate = String.valueOf(r.getUpper());
                                 supported.add("hfr" + rate);
                                 supported.add("hsr" + rate);
+                                mIsHFRSupportedOnCurrentResolution = true;
                             }
                         }
                     }
                 }
             } catch (IllegalArgumentException ex) {
                 Log.w(TAG, "HFR is not supported for this resolution " + ex);
+                mIsHFRSupportedOnCurrentResolution = false;
             }
             if (mExtendedHFRSize != null && mExtendedHFRSize.length >= 3) {
                 for (int i = 0; i < mExtendedHFRSize.length; i += 3) {
@@ -2115,6 +2131,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public float getMinimumFocusDistance(int cameraId) {
         return mCharacteristics.get(cameraId)
                 .get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+    }
+
+    private List<String> getSupportedSavePaths(int cameraId) {
+        boolean writeable = SDCard.instance().isWriteable();
+        List<String> savePaths = new ArrayList<>();
+        savePaths.add("" + 0);
+        if (writeable) {
+            savePaths.add("" + 1);
+        }
+        return savePaths;
     }
 
     private List<String> getSupportedWhiteBalanceModes(int cameraId) {
