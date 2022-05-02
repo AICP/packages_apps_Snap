@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3a72e98f_2e22f35d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1416
+      },
+      "writtenOn": "2022-05-02T14:10:19Z",
+      "side": 1,
+      "message": "Time to abandon and Ship the snap",
+      "revId": "bfa80888423d389ed3c438ecfb8ae672a7a025cd",
+      "serverId": "9f904cbb-a964-4fab-a7dc-5cfc4d5c238b"
+    }
+  ]
+}
